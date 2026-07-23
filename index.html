@@ -505,10 +505,10 @@ function renderTabs() {
   ov.onclick = () => { view = { type: 'overview' }; render(); };
   wrap.appendChild(ov);
 
-  // 2) แนวโครงการทั้งหมด (Lanes) (แยกแนวนอนโครงการและแสดงหน่วยงาน)
+  // 2) รายละเอียดภาพรวมโครงการทั้งหมด (แยกแนวนอนโครงการและแสดงหน่วยงาน)
   const lanesTab = document.createElement('button');
   lanesTab.className = 'tab' + (view.type === 'lanes' ? ' active' : '');
-  lanesTab.textContent = '🛣️ แนวโครงการทั้งหมด (Lanes)';
+  lanesTab.textContent = '🛣️ รายละเอียดภาพรวมโครงการทั้งหมด';
   lanesTab.onclick = () => { view = { type: 'lanes' }; render(); };
   wrap.appendChild(lanesTab);
 
@@ -1016,7 +1016,7 @@ function renderLanesOverview() {
   const root = document.createElement('div');
   const toolbar = document.createElement('div');
   toolbar.className = 'toolbar';
-  toolbar.innerHTML = `<div class="proj-title"><h2>แนวโครงการทั้งหมด (Project Lanes)</h2></div>`;
+  toolbar.innerHTML = `<div class="proj-title"><h2>รายละเอียดภาพรวมโครงการทั้งหมด</h2></div>`;
   renderToolbarControls(toolbar);
   root.appendChild(toolbar);
   root.appendChild(renderLegend());
