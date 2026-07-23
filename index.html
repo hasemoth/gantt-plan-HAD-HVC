@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แผนการดำเนินงาน — Gantt แบบร่วมมือ (ระบบ Cloud)</title>
+<title>แผนการดำเนินงาน — Gantt แบบมืออาชีพ (Dashboard Color Standards)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
 
@@ -341,7 +341,7 @@ function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.rand
 function mkAct(label, colorHex, sBEy, sM, sD, eBEy, eM, eD) { return { id: uid('act'), label, color: colorHex, start: indexFromDate(beDate(sBEy, sM, sD)), end: indexFromDate(beDate(eBEy, eM, eD)) }; }
 function mkRow(acts, name = 'แถว 1') { return { id: uid('row'), name, activities: acts }; }
 function mkDept(name, rows) { return { id: uid('dept'), name, rows }; }
-function seedProject(name, depts) { return { id: uid('proj'), name, departments: depts }; }
+function seedProject(name, depts) { return { id: uid('proj'), name, color: '#3A2E6E', departments: depts }; }
 
 function defaultState() {
   const projA = seedProject('โครงการตัวอย่าง', [
@@ -366,7 +366,10 @@ async function loadState() {
     if (Object.keys(parsed).length > 0) {
       if (!parsed.colors) parsed.colors = JSON.parse(JSON.stringify(DEFAULT_COLORS));
       if (!parsed.viewRange) parsed.viewRange = { start: dateToInputStr(beDate(2569,1,1)), end: dateToInputStr(beDate(2574,12,31)) };
-      parsed.projects.forEach(p => p.departments.forEach(d => d.rows.forEach((r, idx) => { if(!r.name) r.name = `แถว ${idx+1}`; })));
+      parsed.projects.forEach(p => {
+        if (!p.color) p.color = '#3A2E6E';
+        p.departments.forEach(d => d.rows.forEach((r, idx) => { if(!r.name) r.name = `แถว ${idx+1}`; }));
+      });
       return parsed;
     }
   } catch (e) {
@@ -498,28 +501,35 @@ function renderTabs() {
   const wrap = document.createElement('div');
   wrap.className = 'tabs';
   
-  // 1) ภาพรวมทั้งหมด (แบบเดิม V ก่อนหน้า ไม่แยกแถวแนวนอน)
+  // 1) ภาพรวมทั้งหมด
   const ov = document.createElement('button');
   ov.className = 'tab' + (view.type === 'overview' ? ' active' : '');
   ov.textContent = '📊 ภาพรวมทั้งหมด';
   ov.onclick = () => { view = { type: 'overview' }; render(); };
   wrap.appendChild(ov);
 
-  // 2) รายละเอียดภาพรวมโครงการทั้งหมด (แยกแนวนอนโครงการและแสดงหน่วยงาน)
+  // 2) รายละเอียดภาพรวมโครงการ
   const lanesTab = document.createElement('button');
   lanesTab.className = 'tab' + (view.type === 'lanes' ? ' active' : '');
-  lanesTab.textContent = '🛣️ รายละเอียดภาพรวมโครงการทั้งหมด';
+  lanesTab.textContent = '🛣️ รายละเอียดภาพรวมโครงการ';
   lanesTab.onclick = () => { view = { type: 'lanes' }; render(); };
   wrap.appendChild(lanesTab);
 
   // 3) รายโครงการ
   state.projects.forEach(p => {
     const t = document.createElement('button');
-    t.className = 'tab' + (view.type === 'project' && view.id === p.id ? ' active' : '');
+    const isActive = (view.type === 'project' && view.id === p.id);
+    t.className = 'tab' + (isActive ? ' active' : '');
+    
+    if (p.color) {
+      t.style.backgroundColor = p.color;
+      t.style.borderColor = p.color;
+      t.style.color = '#fff';
+    }
+
     t.innerHTML = `<span>${escapeHTML(p.name)}</span>`;
     t.onclick = () => { view = { type: 'project', id: p.id }; render(); };
-    t.oncontextmenu = (e) => { e.preventDefault(); renameProject(p.id); };
-    wrap.appendChild(t);
+    t.oncontextmenu = (e) => { e.preventDefault(); openProjectColorModal(p.id); };
 
     const del = document.createElement('span');
     del.className = 'tab-del';
@@ -527,6 +537,8 @@ function renderTabs() {
     del.title = 'ลบโครงการนี้';
     del.onclick = (e) => { e.stopPropagation(); deleteProject(p.id); };
     t.appendChild(del);
+
+    wrap.appendChild(t);
   });
 
   const add = document.createElement('button');
@@ -707,8 +719,17 @@ function renderProjectDetail(projectId) {
   renameBtn.className = 'ghost-btn'; renameBtn.textContent = '✎ เปลี่ยนชื่อ';
   renameBtn.onclick = () => renameProject(project.id);
   titleWrap.appendChild(renameBtn);
-  toolbar.appendChild(titleWrap);
 
+  // ปุ่มแก้ไขสีโครงการ ย้ายมาเป็นปุ่ม "แก้ไขสี" ชัดเจน ไม่บังตัวหนังสือ
+  const colorBtn = document.createElement('button');
+  colorBtn.className = 'ghost-btn'; 
+  colorBtn.style.borderColor = project.color || '#3A2E6E';
+  colorBtn.style.color = project.color || '#3A2E6E';
+  colorBtn.textContent = '🎨 แก้ไขสีโครงการ';
+  colorBtn.onclick = () => openProjectColorModal(project.id);
+  titleWrap.appendChild(colorBtn);
+
+  toolbar.appendChild(titleWrap);
   renderToolbarControls(toolbar);
 
   const addDeptBtn = document.createElement('button');
@@ -717,7 +738,7 @@ function renderProjectDetail(projectId) {
   toolbar.appendChild(addDeptBtn);
 
   root.appendChild(toolbar);
-  root.appendChild(renderLegend());
+  root.appendChild(renderLegend(project));
 
   const colw = COLW[zoom];
   const { rStart, rEnd, totalDays } = getRenderBounds();
@@ -761,21 +782,38 @@ function renderProjectDetail(projectId) {
   return root;
 }
 
-function renderLegend() {
+// ฟังก์ชันแสดงเฉพาะสีที่มีการเลือกใช้งานจริง
+function renderLegend(targetProject = null) {
   const wrap = document.createElement('div');
   wrap.className = 'legend';
   wrap.innerHTML = `<span class="legend-label">สีกิจกรรม:</span>`;
-  state.colors.forEach(c => {
-    const chip = document.createElement('span');
-    chip.className = 'legend-chip';
-    chip.innerHTML = `<i style="background:${c.hex}"></i>${escapeHTML(c.name)}`;
-    wrap.appendChild(chip);
-  });
+
+  const usedColorsHex = new Set();
+  if (targetProject) {
+    targetProject.departments.forEach(d => d.rows.forEach(r => r.activities.forEach(a => usedColorsHex.add(a.color))));
+  } else {
+    state.projects.forEach(p => p.departments.forEach(d => d.rows.forEach(r => r.activities.forEach(a => usedColorsHex.add(a.color)))));
+  }
+
+  const activeColors = state.colors.filter(c => usedColorsHex.has(c.hex));
+
+  if (activeColors.length === 0) {
+    wrap.innerHTML += `<span style="font-size:12px; color:var(--ink-soft); font-style:italic;">(ยังไม่มีการใช้สีในมุมมองนี้)</span>`;
+  } else {
+    activeColors.forEach(c => {
+      const chip = document.createElement('span');
+      chip.className = 'legend-chip';
+      chip.innerHTML = `<i style="background:${c.hex}"></i>${escapeHTML(c.name)}`;
+      wrap.appendChild(chip);
+    });
+  }
+
   const editBtn = document.createElement('button');
   editBtn.className = 'ghost-btn edit-colors-btn';
-  editBtn.textContent = '✎ แก้ไขชื่อสี';
+  editBtn.textContent = '✎ แก้ไขสี'; // เปลี่ยนชื่อเมนูตามสั่ง
   editBtn.onclick = editColorsModal;
   wrap.appendChild(editBtn);
+
   return wrap;
 }
 
@@ -907,7 +945,7 @@ function buildSubrow(project, dept, row, colw, totalWidth, rStart, rEnd) {
   return track;
 }
 
-/* ===================== หน้าภาพรวมทั้งหมด (แบบ V เดิม: ไม่แยกแถวแนวนอนโครงการ) ===================== */
+/* ===================== หน้าภาพรวมทั้งหมด ===================== */
 function renderOverview() {
   const root = document.createElement('div');
   const toolbar = document.createElement('div');
@@ -1011,12 +1049,12 @@ function renderOverview() {
   return root;
 }
 
-/* ===================== รายละเอียดภาพรวมโครงการทั้งหมด (Project Lanes: แยกแนวนอน + มีหน่วยงาน) ===================== */
+/* ===================== หน้าหน้ารายละเอียดภาพรวมโครงการ ===================== */
 function renderLanesOverview() {
   const root = document.createElement('div');
   const toolbar = document.createElement('div');
   toolbar.className = 'toolbar';
-  toolbar.innerHTML = `<div class="proj-title"><h2>รายละเอียดภาพรวมโครงการทั้งหมด</h2></div>`;
+  toolbar.innerHTML = `<div class="proj-title"><h2>รายละเอียดภาพรวมโครงการ</h2></div>`;
   renderToolbarControls(toolbar);
   root.appendChild(toolbar);
   root.appendChild(renderLegend());
@@ -1034,9 +1072,7 @@ function renderLanesOverview() {
   const body = document.createElement('div');
   body.className = 'gantt-body';
 
-  // วนลูปแสดงแต่ละโครงการ แยกเป็นเลนแนวนอน และแสดงหน่วยงานด้านใน
   state.projects.forEach((p) => {
-    // หัวข้อโครงการหลัก
     const projHeaderBlock = document.createElement('div');
     projHeaderBlock.className = 'dept-block';
     projHeaderBlock.style.background = 'var(--indigo-soft)';
@@ -1056,7 +1092,6 @@ function renderLanesOverview() {
     projHeaderBlock.appendChild(pTrackWrap);
     body.appendChild(projHeaderBlock);
 
-    // วนลูปแสดงหน่วยงานย่อยในโครงการนี้
     if (p.departments.length > 0) {
       p.departments.forEach(dept => {
         const deptBlock = document.createElement('div');
@@ -1162,6 +1197,65 @@ function deleteProject(id) {
     await persistAndRender();
   });
 }
+
+function openProjectColorModal(projectId) {
+  const p = state.projects.find(x => x.id === projectId);
+  if (!p) return;
+
+  modalOpen = true;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  
+  modal.innerHTML = `
+    <h3>เลือกสีแท็บโครงการ: ${escapeHTML(p.name)}</h3>
+    <label class="field-label">เลือกสีประจำโครงการ</label>
+    <div class="color-picker" id="projColorPicker" style="margin-bottom:20px;"></div>
+    <div class="modal-actions" id="modalActions"></div>
+  `;
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  let chosenColor = p.color || '#3A2E6E';
+  const picker = modal.querySelector('#projColorPicker');
+  
+  const allProjectColors = [
+    { hex: '#3A2E6E' }, { hex: '#241C4D' }, { hex: '#22D3EE' }, 
+    { hex: '#34D399' }, { hex: '#EC4899' }, { hex: '#3B82F6' }, 
+    { hex: '#FBBF24' }, { hex: '#8B5CF6' }, { hex: '#EF4444' }, { hex: '#6B7280' }
+  ];
+
+  allProjectColors.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (c.hex === chosenColor ? ' selected' : '');
+    sw.style.background = c.hex;
+    sw.onclick = () => { 
+      chosenColor = c.hex; 
+      [...picker.children].forEach(ch => ch.classList.remove('selected')); 
+      sw.classList.add('selected'); 
+    };
+    picker.appendChild(sw);
+  });
+
+  const actions = modal.querySelector('#modalActions');
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'primary-btn'; 
+  saveBtn.textContent = 'บันทึกสี';
+  saveBtn.onclick = async () => {
+    p.color = chosenColor;
+    closeModal(overlay);
+    await persistAndRender();
+  };
+  actions.appendChild(saveBtn);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'ghost-btn'; 
+  cancelBtn.textContent = 'ยกเลิก';
+  cancelBtn.onclick = () => closeModal(overlay);
+  actions.appendChild(cancelBtn);
+}
+
 function addDepartment(projectId) {
   openTextModal('เพิ่มหน่วยงาน', 'ชื่อหน่วยงาน', '', async (name) => {
     if (!name) return;
