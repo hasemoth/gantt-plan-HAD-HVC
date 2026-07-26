@@ -11,6 +11,7 @@
   --indigo: #3A2E6E; --indigo-deep: #241C4D; --indigo-soft: #EDEAFB;
   --line: #E1E4EC; --line-soft: #EEF0F5; --cyan: #22D3EE; --danger: #E23D5B;
   --danger-soft: #FDEAEE; --radius: 10px; --sticky-bg: #FAFBFD;
+  --cw: 34px;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -50,9 +51,14 @@ body { font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; background: var(--b
 .legend-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); }
 .legend-chip i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
 .edit-colors-btn { font-size: 11px; padding: 4px 8px; margin-left: 8px; }
-.gantt-scroll { overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); max-height: 72vh; }
+
+/* Grid Background System */
+.gantt-scroll { overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); max-height: 72vh; position: relative; }
 .gantt-inner { position: relative; min-width: max-content; }
 .gantt-header { position: sticky; top: 0; z-index: 20; background: var(--sticky-bg); }
+.gantt-grid-bg { position: absolute; top: 0; bottom: 0; left: 220px; pointer-events: none; z-index: 0; overflow: hidden; }
+.grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-soft); }
+
 .header-row { display: flex; }
 .row-label { position: sticky; left: 0; z-index: 10; width: 220px; min-width: 220px; max-width: 220px; background: #FAFBFD; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line-soft); display: flex; align-items: stretch; padding: 0; font-size: 13px; }
 .corner { z-index: 30; font-weight: 700; color: var(--indigo-deep); background: var(--indigo-soft); border-bottom: 1px solid var(--line); padding: 6px 10px; display: flex; align-items: center; }
@@ -78,19 +84,25 @@ body { font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; background: var(--b
 .gantt-body { position: relative; min-width: max-content; }
 .dept-block { display: flex; border-bottom: 2px solid var(--line); min-width: max-content; width: 100%; align-items: stretch; }
 .dept-rows { display: flex; flex-direction: column; flex: 1; }
-.subrow { position: relative; height: 32px; box-sizing: border-box; border-bottom: 1px solid var(--line-soft); cursor: pointer; background-image: repeating-linear-gradient(to right, transparent, transparent 51px, var(--line-soft) 51px, var(--line-soft) 52px); z-index: 1; }
+
+.subrow { position: relative; height: 32px; box-sizing: border-box; border-bottom: 1px solid var(--line-soft); cursor: pointer; z-index: 1; }
 .subrow:last-child { border-bottom: none; }
-.subrow:hover { background-color: #FAFAFE; }
-.act-bar { position: absolute; top: 4px; height: 24px; border-radius: 6px; color: #14213A; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; padding: 0 8px; overflow: hidden; white-space: nowrap; box-shadow: 0 1px 2px rgba(20,33,58,0.25); cursor: pointer; z-index: 2; user-select: none; }
-.act-bar.draggable { cursor: grab; border: 1.5px dashed rgba(255,255,255,0.7); }
+.subrow:hover { background-color: rgba(237, 234, 251, 0.3); }
+
+/* Activity Bar Base Styles */
+.act-bar { position: absolute; top: 4px; height: 24px; border-radius: 6px; color: #14213A; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(20,33,58,0.25); cursor: pointer; z-index: 2; user-select: none; transition: transform 0.1s ease, filter 0.1s ease; overflow: hidden; }
+.act-bar.draggable { cursor: grab; }
 .act-bar.draggable:active { cursor: grabbing; }
-.act-bar:hover { filter: brightness(1.06); box-shadow: 0 2px 6px rgba(20,33,58,0.35); z-index: 3; }
+.act-bar:hover { filter: brightness(1.04); box-shadow: 0 2px 6px rgba(20,33,58,0.35); z-index: 3; }
+
 .row-del-btn { position: absolute; right: 4px; top: 4px; width: 18px; height: 18px; border-radius: 50%; border: none; background: var(--line); color: var(--ink-soft); font-size: 12px; line-height: 1; cursor: pointer; z-index: 4; opacity: 0.5; }
 .row-del-btn:hover { opacity: 1; background: var(--danger); color: #fff; }
 .gantt-grid-overlay { position: absolute; top: 0; bottom: 0; right: 0; left: 220px; pointer-events: none; z-index: 15; }
 .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); }
 .today-line::before { content: 'วันนี้'; position: absolute; top: 2px; left: 4px; font-size: 11px; color: var(--danger); font-weight: 700; background: rgba(255,255,255,0.8); padding: 0 4px; border-radius: 4px; }
 .empty-hint { padding: 30px; text-align: center; color: var(--ink-soft); font-size: 13.5px; }
+
+/* Modal & Custom Date Picker */
 .modal-overlay { position: fixed; inset: 0; background: rgba(20,25,45,0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
 .modal { background: #fff; border-radius: 14px; padding: 22px 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
 .modal h3 { margin: 0 0 14px; color: var(--indigo-deep); font-size: 17px; }
@@ -99,6 +111,10 @@ body { font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; background: var(--b
 .text-input { width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); font-family: inherit; font-size: 13.5px; }
 textarea.text-input { resize: vertical; min-height: 60px; }
 .text-input:focus { outline: 2px solid var(--cyan); border-color: var(--cyan); }
+
+.date-display { width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: #fff; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; color: var(--ink); }
+.date-wrapper:focus-within .date-display { border-color: var(--cyan); outline: 2px solid var(--cyan); }
+
 .color-picker { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .color-swatch { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; }
 .color-swatch.selected { border-color: var(--indigo-deep); box-shadow: 0 0 0 2px #fff inset; }
@@ -106,7 +122,7 @@ textarea.text-input { resize: vertical; min-height: 60px; }
 @media (max-width: 720px) {
   .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
   .row-label { width: 160px; min-width: 160px; max-width: 160px; }
-  .gantt-grid-overlay { left: 160px; }
+  .gantt-grid-overlay, .gantt-grid-bg { left: 160px; }
   .dept-row-names { width: 56px; }
   .row-name-cell { font-size: 10px; padding: 0 4px; }
 }
@@ -124,19 +140,28 @@ function indexFromDate(d) { return Math.round((d.getTime() - EPOCH_T) / DAY); }
 function dateFromIndex(i) { return new Date(EPOCH_T + i * DAY); }
 const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const THAI_WEEKDAY_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
 function dateToInputStr(d) { return d.toISOString().slice(0, 10); }
 function inputStrToDate(str) { if (!str) return null; return new Date(str + 'T00:00:00Z'); }
+function formatDisplayDate(d) {
+    if (!d || isNaN(d)) return '';
+    return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+}
 function formatDateThai(d) {
   if (!d || isNaN(d)) return '';
   return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear() + 543}`;
 }
+
 function todayBangkokIndex() {
   const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' });
   const parts = fmt.formatToParts(new Date());
   const get = (t) => parseInt(parts.find(p => p.type === t).value, 10);
   return indexFromDate(new Date(Date.UTC(get('year'), get('month') - 1, get('day'))));
 }
+
+// URL สำหรับกบรส. ตามต้นฉบับ
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd4llwHPqNUyGCsUUZW7cIS8keeB9h5NinNTTRTf2sLwOpBa9JsiE3boAJlY_XOnwaKw/exec'; 
+
 let state = null, view = { type: 'overview' }, zoom = 'month', modalOpen = false, isSaving = false, dragMode = false, manageDeptMode = false;
 const COLW = { day: 34, week: 6, month: 1.3, year: 0.34 };
 const DEFAULT_COLORS = [
@@ -144,6 +169,7 @@ const DEFAULT_COLORS = [
   { name: 'ชมพู', hex: '#EC4899' }, { name: 'น้ำเงิน', hex: '#3B82F6' },
   { name: 'เหลือง', hex: '#FBBF24' }, { name: 'ม่วง', hex: '#8B5CF6' }
 ];
+
 function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function mkRow(acts, name = 'แถว 1') { return { id: uid('row'), name, activities: acts }; }
 function mkDept(name, rows) { return { id: uid('dept'), name, rows }; }
@@ -156,6 +182,7 @@ function defaultState() {
     overviewSettings: { tab1: { name: '📊 ภาพรวมทั้งหมด', color: '' }, tab2: { name: '🛣️ รายละเอียดภาพรวมโครงการ', color: '' } }
   };
 }
+
 async function loadState() {
   try {
     const res = await fetch(SCRIPT_URL);
@@ -175,6 +202,7 @@ async function loadState() {
   } catch (e) { console.error(e); }
   return null;
 }
+
 async function saveState() {
   if (isSaving) return;
   isSaving = true;
@@ -186,6 +214,7 @@ async function saveState() {
   } catch (e) { if (statusEl) statusEl.innerHTML = 'ระบบติดตามเวลา · <span style="color:#E23D5B">❌ บันทึกไม่สำเร็จ</span>'; }
   isSaving = false;
 }
+
 async function persistAndRender() { render(); await saveState(); }
 async function init() {
   state = await loadState() || defaultState();
@@ -196,15 +225,29 @@ async function init() {
     if (loaded && JSON.stringify(loaded) !== JSON.stringify(state)) { state = loaded; render(); }
   }, 10000);
 }
+
+function getColWidth(zoom, totalDays) {
+  const labelW = window.innerWidth <= 720 ? 160 : 220;
+  const containerWidth = window.innerWidth - 44 - 2 - labelW;
+  const minColw = COLW[zoom];
+  const requiredWidth = totalDays * minColw;
+  if (requiredWidth < containerWidth && requiredWidth > 0) return containerWidth / totalDays;
+  return minColw;
+}
+
+let resizeTimer; 
+window.addEventListener('resize', () => { 
+    clearTimeout(resizeTimer); 
+    resizeTimer = setTimeout(() => { if (!modalOpen && !dragMode) render(); }, 200); 
+});
+
 function getRenderBounds() {
   let rStart = indexFromDate(inputStrToDate(state.viewRange.start));
   let rEnd = indexFromDate(inputStrToDate(state.viewRange.end));
-  if (rEnd < rStart) rEnd = rStart;
-  return { rStart, rEnd, totalDays: rEnd - rStart + 1 };
+  if (rEnd < rStart) rEnd = rStart; return { rStart, rEnd, totalDays: rEnd - rStart + 1 };
 }
 function headerGroupsBounded(rStart, rEnd) {
-  const years = [], months = [];
-  let prevY = null, prevM = null, yStart = rStart, mStart = rStart;
+  const years = [], months = []; let prevY = null, prevM = null, yStart = rStart, mStart = rStart;
   for (let i = rStart; i <= rEnd; i++) {
     const d = dateFromIndex(i), y = d.getUTCFullYear() + 543, m = d.getUTCMonth();
     if (i === rStart) { prevY = y; prevM = m; }
@@ -218,14 +261,13 @@ function weekSegmentsBounded(rStart, rEnd) {
   for (let i = rStart; i <= rEnd; i++) {
     const dow = dateFromIndex(i).getUTCDay();
     if (i > rStart && (dow === 0 || i === rEnd)) {
-      const end = (dow === 0 && i !== rEnd) ? i - 1 : i;
-      const ds = dateFromIndex(wStart);
-      segs.push({ start: wStart, end, label: `${String(ds.getUTCDate()).padStart(2, '0')}/${String(ds.getUTCMonth() + 1).padStart(2, '0')}` });
-      wStart = i;
+      const end = (dow === 0 && i !== rEnd) ? i - 1 : i; const ds = dateFromIndex(wStart);
+      segs.push({ start: wStart, end, label: `${String(ds.getUTCDate()).padStart(2, '0')}/${String(ds.getUTCMonth() + 1).padStart(2, '0')}` }); wStart = i;
     }
   }
   return segs;
 }
+
 function render() {
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -238,12 +280,14 @@ function render() {
   else content.appendChild(renderProjectDetail(view.id));
   app.appendChild(content);
 }
+
 function renderTopbar() {
   const bar = document.createElement('div');
   bar.className = 'topbar';
   bar.innerHTML = `<div class="brand"><div class="brand-mark">แผน<br>งาน</div><div class="brand-text"><div class="brand-title">แผนการดำเนินงาน (ระบบ Cloud)</div><div class="brand-sub">✅ อัปเดตข้อมูลล่าสุดบนคลาวด์แล้ว</div></div></div>`;
   return bar;
 }
+
 function renderTabs() {
   const wrap = document.createElement('div');
   wrap.className = 'tabs';
@@ -289,6 +333,7 @@ function renderTabs() {
   wrap.appendChild(add);
   return wrap;
 }
+
 function renderToolbarControls(toolbar) {
   const zWrap = document.createElement('div'); zWrap.className = 'zoom-controls';
   zWrap.innerHTML = `<span class="zoom-label">มุมมองเวลา:</span>`;
@@ -313,16 +358,50 @@ function renderToolbarControls(toolbar) {
   fBtn.onclick = async () => { state.viewRange.start = document.getElementById('filterStart').value; state.viewRange.end = document.getElementById('filterEnd').value; await persistAndRender(); };
   fWrap.appendChild(fBtn); toolbar.appendChild(fWrap);
 }
+
 function scrollToToday() {
   requestAnimationFrame(() => {
     const el = document.querySelector('.gantt-scroll'); if (!el) return;
-    const { rStart } = getRenderBounds(), todayIdx = todayBangkokIndex(), colw = COLW[zoom];
+    const { rStart, totalDays } = getRenderBounds();
+    const colw = getColWidth(zoom, totalDays);
+    const todayIdx = todayBangkokIndex();
     el.scrollLeft = Math.max(0, (todayIdx - rStart) * colw + 220 - el.clientWidth / 2);
   });
 }
+
+function buildGridBg(colw, rStart, rEnd, totalDays, zoom) {
+    const bg = document.createElement('div');
+    bg.className = 'gantt-grid-bg';
+    bg.style.width = (totalDays * colw) + 'px';
+
+    if (zoom === 'day' || zoom === 'week') {
+        for (let i = rStart; i <= rEnd; i++) {
+            const line = document.createElement('div');
+            line.className = 'grid-line'; line.style.left = ((i - rStart) * colw) + 'px';
+            bg.appendChild(line);
+        }
+    } else if (zoom === 'month') {
+        const weeks = weekSegmentsBounded(rStart, rEnd);
+        weeks.forEach(w => {
+            const line = document.createElement('div');
+            line.className = 'grid-line'; line.style.left = ((w.start - rStart) * colw) + 'px';
+            bg.appendChild(line);
+        });
+    } else if (zoom === 'year') {
+        const { months } = headerGroupsBounded(rStart, rEnd);
+        months.forEach(m => {
+            const line = document.createElement('div');
+            line.className = 'grid-line'; line.style.left = ((m.start - rStart) * colw) + 'px';
+            bg.appendChild(line);
+        });
+    }
+    return bg;
+}
+
 function buildHeader(colw, rStart, rEnd, totalDays, labelText = 'หน่วยงาน / ชื่องาน') {
   const { years, months } = headerGroupsBounded(rStart, rEnd), totalWidth = totalDays * colw;
   const header = document.createElement('div'); header.className = 'gantt-header';
+
   const yearRow = document.createElement('div'); yearRow.className = 'header-row year-row'; yearRow.innerHTML = `<div class="row-label corner">${labelText}</div>`;
   const yTrack = document.createElement('div'); yTrack.className = 'row-track'; yTrack.style.width = totalWidth + 'px';
   years.forEach(y => { const seg = document.createElement('div'); seg.className = 'hdr-seg year-seg'; seg.style.width = ((y.end - y.start + 1) * colw) + 'px'; seg.textContent = 'พ.ศ. ' + y.label; yTrack.appendChild(seg); });
@@ -334,12 +413,15 @@ function buildHeader(colw, rStart, rEnd, totalDays, labelText = 'หน่วย
     months.forEach(m => { const seg = document.createElement('div'); seg.className = 'hdr-seg month-seg'; seg.style.width = ((m.end - m.start + 1) * colw) + 'px'; seg.textContent = m.label; mTrack.appendChild(seg); });
     monthRow.appendChild(mTrack); header.appendChild(monthRow);
   }
+
+  // ซ่อนแถวสัปดาห์หากเป็นมุมมองเดือน
   if (zoom === 'week') {
     const weekRow = document.createElement('div'); weekRow.className = 'header-row week-row'; weekRow.innerHTML = `<div class="row-label corner"></div>`;
     const wTrack = document.createElement('div'); wTrack.className = 'row-track'; wTrack.style.width = totalWidth + 'px';
     weekSegmentsBounded(rStart, rEnd).forEach(seg0 => { const seg = document.createElement('div'); seg.className = 'hdr-seg week-seg'; seg.style.width = ((seg0.end - seg0.start + 1) * colw) + 'px'; seg.textContent = seg0.label; wTrack.appendChild(seg); });
     weekRow.appendChild(wTrack); header.appendChild(weekRow);
   }
+
   if (zoom === 'day') {
     const dayRow = document.createElement('div'); dayRow.className = 'header-row day-row'; dayRow.innerHTML = `<div class="row-label corner"></div>`;
     const dTrack = document.createElement('div'); dTrack.className = 'row-track'; dTrack.style.width = totalWidth + 'px';
@@ -352,6 +434,7 @@ function buildHeader(colw, rStart, rEnd, totalDays, labelText = 'หน่วย
   }
   return header;
 }
+
 function renderProjectDetail(projectId) {
   const project = state.projects.find(p => p.id === projectId), root = document.createElement('div');
   if (!project) { root.textContent = 'ไม่พบโครงการ'; return root; }
@@ -365,9 +448,16 @@ function renderProjectDetail(projectId) {
   const addDeptBtn = document.createElement('button'); addDeptBtn.className = 'primary-btn'; addDeptBtn.textContent = '+ เพิ่มหน่วยงาน'; addDeptBtn.onclick = () => addDepartment(project.id); toolbar.appendChild(addDeptBtn);
   root.appendChild(toolbar); root.appendChild(renderLegend(project));
 
-  const colw = COLW[zoom], { rStart, rEnd, totalDays } = getRenderBounds(), totalWidth = totalDays * colw;
+  const { rStart, rEnd, totalDays } = getRenderBounds();
+  const colw = getColWidth(zoom, totalDays);
+  const totalWidth = totalDays * colw;
+  
   const scrollWrap = document.createElement('div'); scrollWrap.className = 'gantt-scroll';
-  const inner = document.createElement('div'); inner.className = 'gantt-inner'; inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'หน่วยงาน / ชื่องาน'));
+  const inner = document.createElement('div'); inner.className = 'gantt-inner'; 
+  
+  inner.appendChild(buildGridBg(colw, rStart, rEnd, totalDays, zoom));
+  inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'หน่วยงาน / ชื่องาน'));
+  
   const body = document.createElement('div'); body.className = 'gantt-body';
 
   project.departments.forEach((dept, index) => { body.appendChild(buildDeptBlock(project, dept, index, project.departments.length, colw, totalWidth, rStart, rEnd)); });
@@ -380,6 +470,7 @@ function renderProjectDetail(projectId) {
   inner.appendChild(overlay); scrollWrap.appendChild(inner); root.appendChild(scrollWrap);
   setTimeout(scrollToToday, 0); return root;
 }
+
 function renderLegend(targetProject = null) {
   const wrap = document.createElement('div'); wrap.className = 'legend'; wrap.innerHTML = `<span class="legend-label">สีกิจกรรม:</span>`;
   const usedColorsHex = new Set(); let hasTask = false, hasOverdue = false, hasDueToday = false, todayIdx = todayBangkokIndex();
@@ -398,6 +489,7 @@ function renderLegend(targetProject = null) {
   const editBtn = document.createElement('button'); editBtn.className = 'ghost-btn edit-colors-btn'; editBtn.textContent = '✎ แก้ไขสี'; editBtn.onclick = editColorsModal; wrap.appendChild(editBtn);
   return wrap;
 }
+
 function buildDeptBlock(project, dept, index, totalDepts, colw, totalWidth, rStart, rEnd) {
   const block = document.createElement('div'); block.className = 'dept-block';
   const labelCol = document.createElement('div'); labelCol.className = 'row-label';
@@ -424,59 +516,163 @@ function buildDeptBlock(project, dept, index, totalDepts, colw, totalWidth, rSta
   dept.rows.forEach(row => { rowsWrap.appendChild(buildSubrow(project, dept, row, colw, totalWidth, rStart, rEnd)); });
   block.appendChild(rowsWrap); return block;
 }
+
+// --- Smart Activity Bar ---
+function createSmartActivityBar(act, colw, rStart, rEnd, totalWidth, rowActivities, project, dept, row) {
+  const actStart = Math.max(rStart, act.start);
+  const actEnd = Math.min(rEnd, act.end);
+  if (actEnd < rStart || actStart > rEnd) return null;
+
+  const actStartOffset = (actStart - rStart) * colw;
+  const actWidth = Math.max(colw, (actEnd - actStart + 1) * colw - 2);
+
+  const sortedActs = [...rowActivities].sort((a, b) => a.start - b.start || a.end - b.end);
+  const myIndex = sortedActs.findIndex(a => a.id === act.id);
+  const nextAct = sortedActs[myIndex + 1];
+  
+  let spaceToNext = totalWidth - actStartOffset;
+  if (nextAct) {
+      const nextStartOffset = (nextAct.start - rStart) * colw;
+      spaceToNext = Math.max(actWidth, nextStartOffset - actStartOffset - 2);
+  }
+
+  const todayIdx = todayBangkokIndex(); 
+  let displayColor = act.color, prefix = '', statusText = '';
+  if (act.type === 'task') {
+      if (act.completed) { prefix = '✅ '; statusText = ' (เสร็จสิ้น)'; }
+      else {
+          if (todayIdx > act.end) { displayColor = '#EF4444'; prefix = '🚨 '; statusText = ' (เลยกำหนด!)'; }
+          else if (todayIdx === act.end) { displayColor = '#F59E0B'; prefix = '🔥 '; statusText = ' (ครบกำหนดวันนี้!)'; }
+          else { prefix = '📌 '; statusText = ' (รอดำเนินการ)'; }
+      }
+  }
+
+  const bar = document.createElement('div');
+  bar.className = 'act-bar' + (dragMode && project ? ' draggable' : '');
+  bar.style.position = 'absolute';
+  bar.style.left = actStartOffset + 'px';
+  bar.style.width = 'max-content';
+  bar.style.minWidth = actWidth + 'px';
+  bar.style.maxWidth = spaceToNext + 'px'; 
+  bar.title = `${prefix}${act.label}${statusText}${act.remark ? '\n📝 หมายเหตุ: ' + act.remark : ''}`;
+  bar.style.background = 'transparent';
+  bar.style.border = 'none'; 
+  bar.style.padding = '0';
+  bar.style.boxSizing = 'border-box';
+  bar.style.overflow = 'hidden'; 
+
+  let rHex = parseInt(displayColor.slice(1, 3), 16) || 0;
+  let gHex = parseInt(displayColor.slice(3, 5), 16) || 0;
+  let bHex = parseInt(displayColor.slice(5, 7), 16) || 0;
+  let lightBg = `rgba(${rHex}, ${gHex}, ${bHex}, 0.15)`;
+
+  const dashedFill = document.createElement('div');
+  dashedFill.style.position = 'absolute';
+  dashedFill.style.inset = '0';
+  dashedFill.style.background = lightBg;
+  dashedFill.style.border = `1.5px dashed ${displayColor}`;
+  dashedFill.style.borderRadius = '6px';
+  dashedFill.style.zIndex = '0';
+  dashedFill.style.boxSizing = 'border-box';
+
+  const solidFill = document.createElement('div');
+  solidFill.style.position = 'absolute';
+  solidFill.style.left = '0'; 
+  solidFill.style.top = '0'; 
+  solidFill.style.bottom = '0'; 
+  solidFill.style.width = actWidth + 'px'; 
+  solidFill.style.background = displayColor;
+  solidFill.style.border = `1.5px solid ${displayColor}`; 
+  solidFill.style.borderRadius = '6px';
+  solidFill.style.zIndex = '1';
+  solidFill.style.boxSizing = 'border-box';
+
+  const textSpan = document.createElement('span');
+  textSpan.style.position = 'relative';
+  textSpan.style.zIndex = '2';
+  textSpan.style.padding = '0 8px';
+  textSpan.style.whiteSpace = 'nowrap';
+  textSpan.style.overflow = 'hidden';
+  textSpan.style.textOverflow = 'ellipsis';
+  textSpan.style.color = '#14213A';
+  textSpan.style.textShadow = '0 0 3px rgba(255,255,255,0.9), 0 0 1px rgba(255,255,255,1)';
+  textSpan.textContent = prefix + act.label;
+  textSpan.style.display = 'block'; 
+  textSpan.style.width = '100%';
+
+  bar.appendChild(dashedFill);
+  bar.appendChild(solidFill);
+  bar.appendChild(textSpan);
+
+  if (dragMode && project) {
+      bar.onmousedown = (e) => {
+          e.stopPropagation(); e.preventDefault();
+          let startX = e.clientX, initialActStart = act.start, duration = act.end - act.start, hasMoved = false;
+          function onMouseMove(moveEvent) {
+              let dx = moveEvent.clientX - startX, dayShift = Math.round(dx / colw);
+              if (dayShift !== 0) {
+                  hasMoved = true; act.start = initialActStart + dayShift; act.end = act.start + duration;
+                  let curStart = Math.max(rStart, act.start), curEnd = Math.min(rEnd, act.end);
+                  let newOffset = (curStart - rStart) * colw;
+                  let newWidth = Math.max(colw, (curEnd - curStart + 1) * colw - 2);
+                  
+                  bar.style.left = newOffset + 'px';
+                  bar.style.minWidth = newWidth + 'px';
+                  solidFill.style.width = newWidth + 'px';
+                  
+                  const curSortedActs = [...rowActivities].sort((a, b) => a.start - b.start || a.end - b.end);
+                  const curMyIndex = curSortedActs.findIndex(a => a.id === act.id);
+                  const curNextAct = curSortedActs[curMyIndex + 1];
+                  
+                  let curSpaceToNext = totalWidth - newOffset;
+                  if (curNextAct) {
+                      const nextStartOffset = (curNextAct.start - rStart) * colw;
+                      curSpaceToNext = Math.max(newWidth, nextStartOffset - newOffset - 2);
+                  }
+                  bar.style.maxWidth = curSpaceToNext + 'px';
+              }
+          }
+          function onMouseUp() { window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); if (hasMoved) persistAndRender(); }
+          window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp);
+      };
+  } else if (project) {
+      bar.onclick = (e) => { e.stopPropagation(); openActivityModal(project.id, dept.id, row.id, act.id); };
+  }
+
+  return bar;
+}
+
 function buildSubrow(project, dept, row, colw, totalWidth, rStart, rEnd) {
   const track = document.createElement('div'); track.className = 'subrow'; track.style.width = totalWidth + 'px';
   track.onclick = (e) => { if (e.target === track && project) openActivityModal(project.id, dept.id, row.id, null); };
 
   row.activities.forEach(act => {
-    const actStart = Math.max(rStart, act.start), actEnd = Math.min(rEnd, act.end);
-    if (actEnd >= rStart && actStart <= rEnd) {
-      const bar = document.createElement('div'); bar.className = 'act-bar' + (dragMode ? ' draggable' : '');
-      bar.style.left = ((actStart - rStart) * colw) + 'px'; bar.style.width = Math.max(colw, (actEnd - actStart + 1) * colw - 2) + 'px';
-      const todayIdx = todayBangkokIndex(); let displayColor = act.color, prefix = '', statusText = '';
-      if (act.type === 'task') {
-        if (act.completed) { prefix = '✅ '; statusText = ' (เสร็จสิ้น)'; }
-        else {
-          if (todayIdx > act.end) { displayColor = '#EF4444'; prefix = '🚨 '; statusText = ' (เลยกำหนด!)'; }
-          else if (todayIdx === act.end) { displayColor = '#F59E0B'; prefix = '🔥 '; statusText = ' (ครบกำหนดวันนี้!)'; }
-          else { prefix = '📌 '; statusText = ' (รอดำเนินการ)'; }
-        }
-      }
-      bar.style.background = displayColor; bar.textContent = prefix + act.label;
-      bar.title = `${prefix}${act.label}${statusText}${act.remark ? '\n📝 หมายเหตุ: ' + act.remark : ''}`;
-
-      if (dragMode) {
-        bar.onmousedown = (e) => {
-          e.stopPropagation(); e.preventDefault();
-          let startX = e.clientX, initialActStart = act.start, duration = act.end - act.start, hasMoved = false;
-          function onMouseMove(moveEvent) {
-            let dx = moveEvent.clientX - startX, dayShift = Math.round(dx / colw);
-            if (dayShift !== 0) {
-              hasMoved = true; act.start = initialActStart + dayShift; act.end = act.start + duration;
-              let curStart = Math.max(rStart, act.start), curEnd = Math.min(rEnd, act.end);
-              bar.style.left = ((curStart - rStart) * colw) + 'px'; bar.style.width = Math.max(colw, (curEnd - curStart + 1) * colw - 2) + 'px';
-            }
-          }
-          function onMouseUp() { window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); if (hasMoved) persistAndRender(); }
-          window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp);
-        };
-      } else { bar.onclick = (e) => { e.stopPropagation(); openActivityModal(project.id, dept.id, row.id, act.id); }; }
-      track.appendChild(bar);
-    }
+    const bar = createSmartActivityBar(act, colw, rStart, rEnd, totalWidth, row.activities, project, dept, row);
+    if (bar) track.appendChild(bar);
   });
-  if (project && dept.rows.length > 1) {
+
+  if (project && dept.rows.length > 1 && dragMode) {
     const delRowBtn = document.createElement('button'); delRowBtn.className = 'row-del-btn'; delRowBtn.textContent = '×';
     delRowBtn.onclick = (e) => { e.stopPropagation(); deleteRow(project.id, dept.id, row.id); }; track.appendChild(delRowBtn);
   }
   return track;
 }
+
 function renderOverview() {
   const root = document.createElement('div'), toolbar = document.createElement('div'); toolbar.className = 'toolbar';
   toolbar.innerHTML = `<div class="proj-title"><h2>${escapeHTML(state.overviewSettings.tab1.name || 'ภาพรวมทุกโครงการ')}</h2></div>`;
   renderToolbarControls(toolbar); root.appendChild(toolbar); root.appendChild(renderLegend());
-  const colw = COLW[zoom], { rStart, rEnd, totalDays } = getRenderBounds(), totalWidth = totalDays * colw;
+  
+  const { rStart, rEnd, totalDays } = getRenderBounds();
+  const colw = getColWidth(zoom, totalDays);
+  const totalWidth = totalDays * colw;
+
   const scrollWrap = document.createElement('div'); scrollWrap.className = 'gantt-scroll';
-  const inner = document.createElement('div'); inner.className = 'gantt-inner'; inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'ชื่อโครงการ'));
+  const inner = document.createElement('div'); inner.className = 'gantt-inner'; 
+  
+  inner.appendChild(buildGridBg(colw, rStart, rEnd, totalDays, zoom));
+  inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'ชื่อโครงการ'));
+  
   const body = document.createElement('div'); body.className = 'gantt-body';
   const todayIdx = todayBangkokIndex();
 
@@ -498,20 +694,11 @@ function renderOverview() {
     const rowsWrap = document.createElement('div'); rowsWrap.className = 'dept-rows';
     for (let lane = 0; lane < laneCount; lane++) {
       const track = document.createElement('div'); track.className = 'subrow'; track.style.width = totalWidth + 'px';
-      placed.filter(pl => pl.lane === lane).forEach(pl => {
-        const act = pl.act, actStart = Math.max(rStart, act.start), actEnd = Math.min(rEnd, act.end);
-        if (actEnd >= rStart && actStart <= rEnd) {
-          const bar = document.createElement('div'); bar.className = 'act-bar';
-          bar.style.left = ((actStart - rStart) * colw) + 'px'; bar.style.width = Math.max(colw, (actEnd - actStart + 1) * colw - 2) + 'px';
-          let displayColor = act.color, prefix = '';
-          if (act.type === 'task') {
-            if (act.completed) prefix = '✅ ';
-            else if (todayIdx > act.end) { displayColor = '#EF4444'; prefix = '🚨 '; }
-            else if (todayIdx === act.end) { displayColor = '#F59E0B'; prefix = '🔥 '; }
-            else prefix = '📌 ';
-          }
-          bar.style.background = displayColor; bar.textContent = prefix + act.label; track.appendChild(bar);
-        }
+      
+      const actsInLane = placed.filter(pl => pl.lane === lane).map(pl => pl.act);
+      actsInLane.forEach(act => {
+        const bar = createSmartActivityBar(act, colw, rStart, rEnd, totalWidth, actsInLane, null, null, null);
+        if (bar) track.appendChild(bar);
       });
       rowsWrap.appendChild(track);
     }
@@ -523,13 +710,22 @@ function renderOverview() {
   inner.appendChild(overlay); scrollWrap.appendChild(inner); root.appendChild(scrollWrap);
   setTimeout(scrollToToday, 0); return root;
 }
+
 function renderLanesOverview() {
   const root = document.createElement('div'), toolbar = document.createElement('div'); toolbar.className = 'toolbar';
   toolbar.innerHTML = `<div class="proj-title"><h2>${escapeHTML(state.overviewSettings.tab2.name || 'รายละเอียดภาพรวมโครงการ')}</h2></div>`;
   renderToolbarControls(toolbar); root.appendChild(toolbar); root.appendChild(renderLegend());
-  const colw = COLW[zoom], { rStart, rEnd, totalDays } = getRenderBounds(), totalWidth = totalDays * colw;
+  
+  const { rStart, rEnd, totalDays } = getRenderBounds();
+  const colw = getColWidth(zoom, totalDays);
+  const totalWidth = totalDays * colw;
+  
   const scrollWrap = document.createElement('div'); scrollWrap.className = 'gantt-scroll';
-  const inner = document.createElement('div'); inner.className = 'gantt-inner'; inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'โครงการ / หน่วยงาน'));
+  const inner = document.createElement('div'); inner.className = 'gantt-inner'; 
+  
+  inner.appendChild(buildGridBg(colw, rStart, rEnd, totalDays, zoom));
+  inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'โครงการ / หน่วยงาน'));
+  
   const body = document.createElement('div'); body.className = 'gantt-body'; const todayIdx = todayBangkokIndex();
 
   state.projects.forEach(p => {
@@ -551,19 +747,8 @@ function renderLanesOverview() {
       dept.rows.forEach(row => {
         const track = document.createElement('div'); track.className = 'subrow'; track.style.width = totalWidth + 'px';
         row.activities.forEach(act => {
-          const actStart = Math.max(rStart, act.start), actEnd = Math.min(rEnd, act.end);
-          if (actEnd >= rStart && actStart <= rEnd) {
-            const bar = document.createElement('div'); bar.className = 'act-bar';
-            bar.style.left = ((actStart - rStart) * colw) + 'px'; bar.style.width = Math.max(colw, (actEnd - actStart + 1) * colw - 2) + 'px';
-            let displayColor = act.color, prefix = '';
-            if (act.type === 'task') {
-              if (act.completed) prefix = '✅ ';
-              else if (todayIdx > act.end) { displayColor = '#EF4444'; prefix = '🚨 '; }
-              else if (todayIdx === act.end) { displayColor = '#F59E0B'; prefix = '🔥 '; }
-              else prefix = '📌 ';
-            }
-            bar.style.background = displayColor; bar.textContent = prefix + act.label; track.appendChild(bar);
-          }
+          const bar = createSmartActivityBar(act, colw, rStart, rEnd, totalWidth, row.activities, null, null, null);
+          if(bar) track.appendChild(bar);
         });
         rowsWrap.appendChild(track);
       });
@@ -576,6 +761,7 @@ function renderLanesOverview() {
   inner.appendChild(overlay); scrollWrap.appendChild(inner); root.appendChild(scrollWrap);
   setTimeout(scrollToToday, 0); return root;
 }
+
 function openActivityModal(projectId, deptId, rowId, actId) {
   const p = state.projects.find(x => x.id === projectId), d = p.departments.find(x => x.id === deptId), r = d.rows.find(x => x.id === rowId);
   const existing = actId ? r.activities.find(a => a.id === actId) : null;
@@ -598,10 +784,32 @@ function openActivityModal(projectId, deptId, rowId, actId) {
     </div>
     <label class="field-label">หมายเหตุ</label>
     <textarea id="actRemark" class="text-input" placeholder="รายละเอียดเพิ่มเติม...">${existing && existing.remark ? escapeHTML(existing.remark) : ''}</textarea>
+    
+    <!-- Date Overlay Hack (วัน/เดือน/ปี) -->
     <label class="field-label">วันที่เริ่มต้น</label>
-    <div style="display:flex; gap:6px; align-items:center;"><input type="date" id="actStart" class="text-input" value="${dateToInputStr(startD)}" style="flex:1;"><span id="txtStartThai" style="font-size:12px; font-weight:600; color:var(--indigo); min-width:85px; text-align:right;">${formatDateThai(startD)}</span></div>
+    <div style="display:flex; gap:6px; align-items:center;">
+        <div class="date-wrapper" style="position:relative; flex:1;">
+            <div class="date-display" style="cursor:pointer; width:100%;">
+                <span id="actStartDisplay">${formatDisplayDate(startD)}</span>
+                <span style="opacity:0.5">📅</span>
+            </div>
+            <input type="date" id="actStart" value="${dateToInputStr(startD)}" onclick="try{this.showPicker()}catch(e){}" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+        </div>
+        <span id="txtStartThai" style="font-size:12px; font-weight:600; color:var(--indigo); min-width:85px; text-align:right;">${formatDateThai(startD)}</span>
+    </div>
+    
     <label class="field-label">วันที่สิ้นสุด</label>
-    <div style="display:flex; gap:6px; align-items:center;"><input type="date" id="actEnd" class="text-input" value="${dateToInputStr(endD)}" style="flex:1;"><span id="txtEndThai" style="font-size:12px; font-weight:600; color:var(--indigo); min-width:85px; text-align:right;">${formatDateThai(endD)}</span></div>
+    <div style="display:flex; gap:6px; align-items:center;">
+        <div class="date-wrapper" style="position:relative; flex:1;">
+            <div class="date-display" style="cursor:pointer; width:100%;">
+                <span id="actEndDisplay">${formatDisplayDate(endD)}</span>
+                <span style="opacity:0.5">📅</span>
+            </div>
+            <input type="date" id="actEnd" value="${dateToInputStr(endD)}" onclick="try{this.showPicker()}catch(e){}" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;">
+        </div>
+        <span id="txtEndThai" style="font-size:12px; font-weight:600; color:var(--indigo); min-width:85px; text-align:right;">${formatDateThai(endD)}</span>
+    </div>
+    
     <label class="field-label" style="margin-top:10px;">สีกิจกรรม</label>
     <div class="color-picker" id="colorPicker"></div>
     <div class="modal-actions" id="modalActions"></div>
@@ -609,8 +817,28 @@ function openActivityModal(projectId, deptId, rowId, actId) {
   overlay.appendChild(modal); document.body.appendChild(overlay);
 
   modal.querySelector('#actType').addEventListener('change', (e) => { modal.querySelector('#taskStatusWrap').style.display = e.target.value === 'task' ? 'flex' : 'none'; });
-  modal.querySelector('#actStart').oninput = (e) => { modal.querySelector('#txtStartThai').textContent = formatDateThai(inputStrToDate(e.target.value)); };
-  modal.querySelector('#actEnd').oninput = (e) => { modal.querySelector('#txtEndThai').textContent = formatDateThai(inputStrToDate(e.target.value)); };
+  
+  let currentDuration = existing ? (existing.end - existing.start) : 0;
+  
+  modal.querySelector('#actStart').oninput = (e) => { 
+      const newStartD = inputStrToDate(e.target.value);
+      modal.querySelector('#actStartDisplay').textContent = formatDisplayDate(newStartD);
+      modal.querySelector('#txtStartThai').textContent = formatDateThai(newStartD); 
+      
+      const newEndD = new Date(newStartD.getTime() + (currentDuration * DAY));
+      modal.querySelector('#actEnd').value = dateToInputStr(newEndD);
+      modal.querySelector('#actEndDisplay').textContent = formatDisplayDate(newEndD);
+      modal.querySelector('#txtEndThai').textContent = formatDateThai(newEndD);
+  };
+  
+  modal.querySelector('#actEnd').oninput = (e) => { 
+      const newEndD = inputStrToDate(e.target.value);
+      const newStartD = inputStrToDate(modal.querySelector('#actStart').value);
+      modal.querySelector('#actEndDisplay').textContent = formatDisplayDate(newEndD);
+      modal.querySelector('#txtEndThai').textContent = formatDateThai(newEndD); 
+      
+      currentDuration = indexFromDate(newEndD) - indexFromDate(newStartD);
+  };
 
   let chosenColor = existing ? existing.color : state.colors[0].hex;
   const picker = modal.querySelector('#colorPicker');
@@ -639,6 +867,7 @@ function openActivityModal(projectId, deptId, rowId, actId) {
   }
   const cancelBtn = document.createElement('button'); cancelBtn.className = 'ghost-btn'; cancelBtn.textContent = 'ยกเลิก'; cancelBtn.onclick = () => closeModal(overlay); actions.appendChild(cancelBtn);
 }
+
 function addProject() {
   openTextModal('เพิ่มโครงการใหม่', 'ชื่อโครงการ', '', async (name) => {
     if (!name) return; state.projects.push(seedProject(name, [mkDept('หน่วยงานที่ 1', [mkRow([])])])); await persistAndRender();
@@ -694,17 +923,6 @@ function editColorsModal() {
 }
 function addDepartment(projectId) { openTextModal('เพิ่มหน่วยงาน', 'ชื่อหน่วยงาน', '', async (name) => { if (!name) return; state.projects.find(x => x.id === projectId).departments.push(mkDept(name, [mkRow([])])); await persistAndRender(); }); }
 function renameDepartment(projectId, deptId) { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); openTextModal('เปลี่ยนชื่อหน่วยงาน', 'ชื่อหน่วยงาน', d.name, async (name) => { if (!name) return; d.name = name; await persistAndRender(); }); }
-function moveDepartment(projectId, deptId, direction) {
-  const p = state.projects.find(x => x.id === projectId);
-  if (!p) return;
-  const idx = p.departments.findIndex(d => d.id === deptId);
-  if (idx === -1) return;
-  const targetIdx = idx + direction;
-  if (targetIdx < 0 || targetIdx >= p.departments.length) return;
-  const item = p.departments.splice(idx, 1)[0];
-  p.departments.splice(targetIdx, 0, item);
-  persistAndRender();
-}
 function deleteDepartment(projectId, deptId) { openConfirmModal('ลบหน่วยงานนี้?', 'กิจกรรมทั้งหมดในหน่วยงานจะถูกลบ', async () => { state.projects.find(x => x.id === projectId).departments = state.projects.find(x => x.id === projectId).departments.filter(d => d.id !== deptId); await persistAndRender(); }); }
 function addRow(projectId, deptId) { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); d.rows.push(mkRow([], `แถว ${d.rows.length + 1}`)); persistAndRender(); }
 function renameRow(projectId, deptId, rowId) { const r = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId).rows.find(x => x.id === rowId); openTextModal('เปลี่ยนชื่อแถว', 'ชื่อสำหรับแถวนี้', r.name, async (name) => { r.name = name || 'แถว'; await persistAndRender(); }); }
