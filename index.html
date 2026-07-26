@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แผนการดำเนินงาน — Gantt แบบร่วมมือ (ระบบ Cloud)</title>
+<title>แผนการดำเนินงาน กบรส. — Gantt แบบร่วมมือ (ระบบ Cloud)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
 :root {
@@ -58,8 +58,9 @@ body { font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; background: var(--b
 .corner { z-index: 30; font-weight: 700; color: var(--indigo-deep); background: var(--indigo-soft); border-bottom: 1px solid var(--line); padding: 6px 10px; display: flex; align-items: center; }
 .dept-info { flex: 1; padding: 6px 10px; display: flex; flex-direction: column; justify-content: center; gap: 4px; border-right: 1px solid var(--line-soft); min-width: 0; }
 .dept-name { font-weight: 600; color: var(--ink); line-height: 1.2; word-break: break-word; }
-.dept-ctrls { display: flex; gap: 4px; flex-wrap: wrap; }
-.dept-ctrls .icon-btn { padding: 3px 7px; font-size: 11px; }
+.dept-ctrls { display: none; gap: 3px; flex-wrap: wrap; margin-top: 2px; }
+.dept-ctrls.show { display: flex; }
+.dept-ctrls .icon-btn { padding: 2px 5px; font-size: 10px; }
 .dept-row-names { width: 76px; flex-shrink: 0; display: flex; flex-direction: column; background: #FAFAFD; }
 .row-name-cell { height: 32px; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s ease; }
 .row-name-cell:hover { background: var(--indigo-soft); color: var(--indigo); font-weight: 600; }
@@ -136,7 +137,7 @@ function todayBangkokIndex() {
   return indexFromDate(new Date(Date.UTC(get('year'), get('month') - 1, get('day'))));
 }
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd4llwHPqNUyGCsUUZW7cIS8keeB9h5NinNTTRTf2sLwOpBa9JsiE3boAJlY_XOnwaKw/exec'; 
-let state = null, view = { type: 'overview' }, zoom = 'month', modalOpen = false, isSaving = false, dragMode = false;
+let state = null, view = { type: 'overview' }, zoom = 'month', modalOpen = false, isSaving = false, dragMode = false, manageDeptMode = false;
 const COLW = { day: 34, week: 6, month: 1.3, year: 0.34 };
 const DEFAULT_COLORS = [
   { name: 'ฟ้า', hex: '#22D3EE' }, { name: 'เขียว', hex: '#34D399' },
@@ -302,6 +303,10 @@ function renderToolbarControls(toolbar) {
   mWrap.innerHTML = `<input type="checkbox" id="dragModeToggle" ${dragMode ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px;"><span style="font-weight:600; color:var(--indigo-deep);">✋ เปิดโหมดลากเลื่อนวัน</span>`;
   mWrap.querySelector('input').onchange = (e) => { dragMode = e.target.checked; render(); }; toolbar.appendChild(mWrap);
 
+  const dWrap = document.createElement('label'); dWrap.className = 'mode-controls'; dWrap.style.cursor = 'pointer';
+  dWrap.innerHTML = `<input type="checkbox" id="manageDeptToggle" ${manageDeptMode ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px;"><span style="font-weight:600; color:var(--indigo-deep);">⚙️ เปิดโหมดจัดการหน่วยงาน</span>`;
+  dWrap.querySelector('input').onchange = (e) => { manageDeptMode = e.target.checked; render(); }; toolbar.appendChild(dWrap);
+
   const fWrap = document.createElement('div'); fWrap.className = 'filter-controls';
   fWrap.innerHTML = `<span class="zoom-label">แสดงช่วง:</span><input type="date" id="filterStart" value="${state.viewRange.start}"><span style="color:var(--ink-soft); font-size:12px;">ถึง</span><input type="date" id="filterEnd" value="${state.viewRange.end}">`;
   const fBtn = document.createElement('button'); fBtn.className = 'ghost-btn'; fBtn.style.padding = '3px 8px'; fBtn.style.fontSize = '12px'; fBtn.textContent = 'ตกลง';
@@ -365,7 +370,7 @@ function renderProjectDetail(projectId) {
   const inner = document.createElement('div'); inner.className = 'gantt-inner'; inner.appendChild(buildHeader(colw, rStart, rEnd, totalDays, 'หน่วยงาน / ชื่องาน'));
   const body = document.createElement('div'); body.className = 'gantt-body';
 
-  project.departments.forEach(dept => { body.appendChild(buildDeptBlock(project, dept, colw, totalWidth, rStart, rEnd)); });
+  project.departments.forEach((dept, index) => { body.appendChild(buildDeptBlock(project, dept, index, project.departments.length, colw, totalWidth, rStart, rEnd)); });
   if (project.departments.length === 0) { const empty = document.createElement('div'); empty.className = 'empty-hint'; empty.textContent = 'ยังไม่มีหน่วยงานในโครงการนี้'; body.appendChild(empty); }
   inner.appendChild(body);
 
@@ -393,15 +398,20 @@ function renderLegend(targetProject = null) {
   const editBtn = document.createElement('button'); editBtn.className = 'ghost-btn edit-colors-btn'; editBtn.textContent = '✎ แก้ไขสี'; editBtn.onclick = editColorsModal; wrap.appendChild(editBtn);
   return wrap;
 }
-function buildDeptBlock(project, dept, colw, totalWidth, rStart, rEnd) {
+function buildDeptBlock(project, dept, index, totalDepts, colw, totalWidth, rStart, rEnd) {
   const block = document.createElement('div'); block.className = 'dept-block';
   const labelCol = document.createElement('div'); labelCol.className = 'row-label';
   const deptInfo = document.createElement('div'); deptInfo.className = 'dept-info'; deptInfo.innerHTML = `<div class="dept-name">${escapeHTML(dept.name)}</div>`;
-  const ctrls = document.createElement('div'); ctrls.className = 'dept-ctrls';
+  
+  const ctrls = document.createElement('div'); ctrls.className = 'dept-ctrls' + (manageDeptMode ? ' show' : '');
   const addRowBtn = document.createElement('button'); addRowBtn.className = 'icon-btn'; addRowBtn.textContent = '+ แถว'; addRowBtn.onclick = () => addRow(project.id, dept.id);
   const renameDeptBtn = document.createElement('button'); renameDeptBtn.className = 'icon-btn'; renameDeptBtn.textContent = '✎'; renameDeptBtn.onclick = () => renameDepartment(project.id, dept.id);
+  const upDeptBtn = document.createElement('button'); upDeptBtn.className = 'icon-btn'; upDeptBtn.textContent = '🔼'; upDeptBtn.disabled = (index === 0); upDeptBtn.onclick = () => moveDepartment(project.id, dept.id, -1);
+  const downDeptBtn = document.createElement('button'); downDeptBtn.className = 'icon-btn'; downDeptBtn.textContent = '🔽'; downDeptBtn.disabled = (index === totalDepts - 1); downDeptBtn.onclick = () => moveDepartment(project.id, dept.id, 1);
   const delDeptBtn = document.createElement('button'); delDeptBtn.className = 'icon-btn danger'; delDeptBtn.textContent = '🗑'; delDeptBtn.onclick = () => deleteDepartment(project.id, dept.id);
-  ctrls.append(addRowBtn, renameDeptBtn, delDeptBtn); deptInfo.appendChild(ctrls);
+  
+  ctrls.append(addRowBtn, renameDeptBtn, upDeptBtn, downDeptBtn, delDeptBtn); 
+  deptInfo.appendChild(ctrls);
 
   const rowNamesCol = document.createElement('div'); rowNamesCol.className = 'dept-row-names';
   dept.rows.forEach(row => {
@@ -684,6 +694,17 @@ function editColorsModal() {
 }
 function addDepartment(projectId) { openTextModal('เพิ่มหน่วยงาน', 'ชื่อหน่วยงาน', '', async (name) => { if (!name) return; state.projects.find(x => x.id === projectId).departments.push(mkDept(name, [mkRow([])])); await persistAndRender(); }); }
 function renameDepartment(projectId, deptId) { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); openTextModal('เปลี่ยนชื่อหน่วยงาน', 'ชื่อหน่วยงาน', d.name, async (name) => { if (!name) return; d.name = name; await persistAndRender(); }); }
+function moveDepartment(projectId, deptId, direction) {
+  const p = state.projects.find(x => x.id === projectId);
+  if (!p) return;
+  const idx = p.departments.findIndex(d => d.id === deptId);
+  if (idx === -1) return;
+  const targetIdx = idx + direction;
+  if (targetIdx < 0 || targetIdx >= p.departments.length) return;
+  const item = p.departments.splice(idx, 1)[0];
+  p.departments.splice(targetIdx, 0, item);
+  persistAndRender();
+}
 function deleteDepartment(projectId, deptId) { openConfirmModal('ลบหน่วยงานนี้?', 'กิจกรรมทั้งหมดในหน่วยงานจะถูกลบ', async () => { state.projects.find(x => x.id === projectId).departments = state.projects.find(x => x.id === projectId).departments.filter(d => d.id !== deptId); await persistAndRender(); }); }
 function addRow(projectId, deptId) { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); d.rows.push(mkRow([], `แถว ${d.rows.length + 1}`)); persistAndRender(); }
 function renameRow(projectId, deptId, rowId) { const r = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId).rows.find(x => x.id === rowId); openTextModal('เปลี่ยนชื่อแถว', 'ชื่อสำหรับแถวนี้', r.name, async (name) => { r.name = name || 'แถว'; await persistAndRender(); }); }
