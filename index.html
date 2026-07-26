@@ -973,6 +973,21 @@ function editColorsModal() {
 function addDepartment(projectId) { openTextModal('เพิ่มหน่วยงาน', 'ชื่อหน่วยงาน', '', async (name) => { if (!name) return; state.projects.find(x => x.id === projectId).departments.push(mkDept(name, [mkRow([])])); await persistAndRender(); }); }
 function renameDepartment(projectId, deptId) { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); openTextModal('เปลี่ยนชื่อหน่วยงาน', 'ชื่อหน่วยงาน', d.name, async (name) => { if (!name) return; d.name = name; await persistAndRender(); }); }
 function deleteDepartment(projectId, deptId) { openConfirmModal('ลบหน่วยงานนี้?', 'กิจกรรมทั้งหมดในหน่วยงานจะถูกลบ', async () => { state.projects.find(x => x.id === projectId).departments = state.projects.find(x => x.id === projectId).departments.filter(d => d.id !== deptId); await persistAndRender(); }); }
+
+// เพิ่มฟังก์ชัน moveDepartment เพื่อใช้สำหรับเลื่อนตำแหน่งหน่วยงานขึ้น-ลง
+async function moveDepartment(projectId, deptId, direction) {
+  const project = state.projects.find(x => x.id === projectId);
+  if (!project) return;
+  const deptIndex = project.departments.findIndex(x => x.id === deptId);
+  if (deptIndex === -1) return;
+  const newIndex = deptIndex + direction;
+  if (newIndex < 0 || newIndex >= project.departments.length) return;
+  const temp = project.departments[deptIndex];
+  project.departments[deptIndex] = project.departments[newIndex];
+  project.departments[newIndex] = temp;
+  await persistAndRender();
+}
+
 function addRow(projectId, deptId) { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); d.rows.push(mkRow([], `แถว ${d.rows.length + 1}`)); persistAndRender(); }
 function renameRow(projectId, deptId, rowId) { const r = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId).rows.find(x => x.id === rowId); openTextModal('เปลี่ยนชื่อแถว', 'ชื่อสำหรับแถวนี้', r.name, async (name) => { r.name = name || 'แถว'; await persistAndRender(); }); }
 function deleteRow(projectId, deptId, rowId) { openConfirmModal('ลบแถวนี้?', 'กิจกรรมจะถูกลบ', async () => { const d = state.projects.find(x => x.id === projectId).departments.find(x => x.id === deptId); d.rows = d.rows.filter(r => r.id !== rowId); if (d.rows.length === 0) d.rows.push(mkRow([], 'แถว 1')); await persistAndRender(); }); }
