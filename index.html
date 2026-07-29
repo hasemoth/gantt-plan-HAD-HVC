@@ -543,6 +543,7 @@ function renderProjectDetail(projectId) {
           height: 450,
           menubar: 'file edit view insert format tools table',
           branding: false,
+          promotion: false, // <--- เพิ่มบรรทัดนี้เพื่อซ่อนปุ่ม Upgrade
           setup: function (editor) {
               // ดึงข้อมูลเดิมจาก state ที่โหลดไว้มาแสดง
               editor.on('init', function() {
